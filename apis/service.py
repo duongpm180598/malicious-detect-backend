@@ -1,17 +1,12 @@
 import pandas as pd
-import itertools
-from sklearn.metrics import classification_report,confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import xgboost as xgb
 from lightgbm import LGBMClassifier
-import os
-import seaborn as sns
-from wordcloud import WordCloud
 
-df=pd.read_csv('malicious_phish.csv')
+df=pd.read_csv('all_urls.csv')
 print(df.shape)
 df.head()
 
@@ -136,7 +131,6 @@ df['count-letters']= df['url'].apply(lambda i: letter_count(i))
 # pip install tld
 from urllib.parse import urlparse
 from tld import get_tld
-import os.path
 #First Directory Length
 def fd_length(url):
     urlpath= urlparse(url).path
@@ -171,11 +165,17 @@ y = df['type_code']
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2,shuffle=True, random_state=5)
 
 # Random Forest Model
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 rf = RandomForestClassifier(n_estimators=100,max_features='sqrt')
 rf.fit(X_train,y_train)
 y_pred_rf = rf.predict(X_test)
 print(classification_report(y_test,y_pred_rf,target_names=['benign', 'defacement','phishing','malware']))
+
+# Extra Trees Classifier
+et = ExtraTreesClassifier(n_estimators=100, max_features='sqrt')
+et.fit(X_train, y_train)
+y_pred_et = et.predict(X_test)
+print(classification_report(y_test, y_pred_et, target_names=['benign', 'defacement', 'phishing', 'malware']))
 
 #XGboost
 xgb_c = xgb.XGBClassifier(n_estimators= 100)

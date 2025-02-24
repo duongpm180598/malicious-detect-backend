@@ -1,0 +1,9 @@
+pandas
+scikit-learn
+xgboost
+lightgbm
+numpy
+flask
+flask-cors
+googlesearch
+tld
