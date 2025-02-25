@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS, cross_origin
-from service import get_prediction_from_url
+from train_service import get_prediction_from_url
 import urllib.parse
 
 app = Flask(__name__)
@@ -22,4 +22,4 @@ def get_user(domain_name):
         return jsonify({"error": str(e)}), 500
     
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

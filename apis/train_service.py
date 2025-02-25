@@ -1,17 +1,11 @@
-import pandas as pd
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-from lightgbm import LGBMClassifier
-import seaborn as sns
-
-# df=pd.read_csv('all_urls.csv')
-# print(df.shape)
-# df.head()
-
+#Importing dependencies
 import re
+import os.path
+from tld import get_tld
+from googlesearch import search
+from urllib.parse import urlparse
+from urllib.parse import urlparse
+
 #Use of IP or not in domain
 def having_ip_address(url):
     match = re.search(
@@ -25,8 +19,7 @@ def having_ip_address(url):
     else:
         # print 'No matching pattern found'
         return 0
-df['use_of_ip'] = df['url'].apply(lambda i: having_ip_address(i))
-from urllib.parse import urlparse
+
 def abnormal_url(url):
     hostname = urlparse(url).hostname
     hostname = str(hostname)
@@ -37,33 +30,31 @@ def abnormal_url(url):
     else:
         # print 'No matching pattern found'
         return 0
-df['abnormal_url'] = df['url'].apply(lambda i: abnormal_url(i))
-#pip install googlesearch-python
-from googlesearch import search
+
 def google_index(url):
     site = search(url, 5)
     return 1 if site else 0
-df['google_index'] = df['url'].apply(lambda i: google_index(i))
+
 def count_dot(url):
     count_dot = url.count('.')
     return count_dot
-df['count.'] = df['url'].apply(lambda i: count_dot(i))
+
 def count_www(url):
     url.count('www')
     return url.count('www')
-df['count-www'] = df['url'].apply(lambda i: count_www(i))
+
 def count_atrate(url):
-     
     return url.count('@')
-df['count@'] = df['url'].apply(lambda i: count_atrate(i))
+
+
 def no_of_dir(url):
     urldir = urlparse(url).path
     return urldir.count('/')
-df['count_dir'] = df['url'].apply(lambda i: no_of_dir(i))
+
 def no_of_embed(url):
     urldir = urlparse(url).path
     return urldir.count('//')
-df['count_embed_domian'] = df['url'].apply(lambda i: no_of_embed(i))
+
 def shortening_service(url):
     match = re.search('bit\.ly|goo\.gl|shorte\.st|go2l\.ink|x\.co|ow\.ly|t\.co|tinyurl|tr\.im|is\.gd|cli\.gs|'
                       'yfrog\.com|migre\.me|ff\.im|tiny\.cc|url4\.eu|twit\.ac|su\.pr|twurl\.nl|snipurl\.com|'
@@ -78,35 +69,31 @@ def shortening_service(url):
         return 1
     else:
         return 0
-    
-df['short_url'] = df['url'].apply(lambda i: shortening_service(i))
+
 def count_https(url):
     return url.count('https')
-df['count-https'] = df['url'].apply(lambda i : count_https(i))
+
 def count_http(url):
     return url.count('http')
-df['count-http'] = df['url'].apply(lambda i : count_http(i))
+
 def count_per(url):
     return url.count('%')
-df['count%'] = df['url'].apply(lambda i : count_per(i))
+
 def count_ques(url):
     return url.count('?')
-df['count?'] = df['url'].apply(lambda i: count_ques(i))
+
 def count_hyphen(url):
     return url.count('-')
-df['count-'] = df['url'].apply(lambda i: count_hyphen(i))
+
 def count_equal(url):
     return url.count('=')
-df['count='] = df['url'].apply(lambda i: count_equal(i))
+
 def url_length(url):
     return len(str(url))
-#Length of URL
-df['url_length'] = df['url'].apply(lambda i: url_length(i))
-#Hostname Length
+
 def hostname_length(url):
     return len(urlparse(url).netloc)
-df['hostname_length'] = df['url'].apply(lambda i: hostname_length(i))
-df.head()
+
 def suspicious_words(url):
     match = re.search('PayPal|login|signin|bank|account|update|free|lucky|service|bonus|ebayisapi|webscr',
                       url)
@@ -114,24 +101,21 @@ def suspicious_words(url):
         return 1
     else:
         return 0
-df['sus_url'] = df['url'].apply(lambda i: suspicious_words(i))
+
 def digit_count(url):
     digits = 0
     for i in url:
         if i.isnumeric():
             digits = digits + 1
     return digits
-df['count-digits']= df['url'].apply(lambda i: digit_count(i))
+
 def letter_count(url):
     letters = 0
     for i in url:
         if i.isalpha():
             letters = letters + 1
     return letters
-df['count-letters']= df['url'].apply(lambda i: letter_count(i))
-# pip install tld
-from urllib.parse import urlparse
-from tld import get_tld
+
 #First Directory Length
 def fd_length(url):
     urlpath= urlparse(url).path
@@ -139,74 +123,27 @@ def fd_length(url):
         return len(urlpath.split('/')[1])
     except:
         return 0
-df['fd_length'] = df['url'].apply(lambda i: fd_length(i))
-#Length of Top Level Domain
-df['tld'] = df['url'].apply(lambda i: get_tld(i,fail_silently=True))
+
 def tld_length(tld):
     try:
         return len(tld)
     except:
         return -1
-df['tld_length'] = df['tld'].apply(lambda i: tld_length(i))
+    
+import pickle
+import numpy as np
+import pandas as pd
 
-from sklearn.preprocessing import LabelEncoder
-lb_make = LabelEncoder()
-df["type_code"] = lb_make.fit_transform(df["type"])
+rf_loaded_model = pickle.load(open('random_forest_model.sav', 'rb'))
 
-#Predictor Variables
-# filtering out google_index as it has only 1 value
-X = df[['use_of_ip','abnormal_url', 'count.', 'count-www', 'count@',
+columns = ['use_of_ip','abnormal_url', 'count.', 'count-www', 'count@',
        'count_dir', 'count_embed_domian', 'short_url', 'count-https',
        'count-http', 'count%', 'count?', 'count-', 'count=', 'url_length',
        'hostname_length', 'sus_url', 'fd_length', 'tld_length', 'count-digits',
-       'count-letters']]
-#Target Variable
-y = df['type_code']
+       'count-letters']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2,shuffle=True, random_state=5)
+def url_parse(url):
 
-# Save X_train, X_test, y_train, y_test
-import pickle
-pickle.dump(X_train, open('X_train.pkl', 'wb'))
-pickle.dump(X_test, open('X_test.pkl', 'wb'))
-pickle.dump(y_train, open('y_train.pkl', 'wb'))
-pickle.dump(y_test, open('y_test.pkl', 'wb'))
-
-X_train = pickle.load(open('X_train.pkl', 'rb'))
-X_test = pickle.load(open('X_test.pkl', 'rb'))
-y_train = pickle.load(open('y_train.pkl', 'rb'))
-y_test = pickle.load(open('y_test.pkl', 'rb'))
-
-# # Random Forest Model
-# from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
-# rf = RandomForestClassifier(n_estimators=100,max_features='sqrt')
-# rf.fit(X_train,y_train)
-# y_pred_rf = rf.predict(X_test)
-# print(classification_report(y_test,y_pred_rf,target_names=['benign', 'defacement','phishing','malware']))
-
-# # Extra Trees Classifier
-# et = ExtraTreesClassifier(n_estimators=100, max_features='sqrt')
-# et.fit(X_train, y_train)
-# y_pred_et = et.predict(X_test)
-# print(classification_report(y_test, y_pred_et, target_names=['benign', 'defacement', 'phishing', 'malware']))
-
-# #XGboost
-# xgb_c = xgb.XGBClassifier(n_estimators= 100)
-# xgb_c.fit(X_train,y_train)
-# y_pred_x = xgb_c.predict(X_test)
-# print(classification_report(y_test,y_pred_x,target_names=['benign', 'defacement','phishing','malware']))
-
-# # Light GBM Classifier
-# lgb = LGBMClassifier(objective='multiclass',boosting_type= 'gbdt',n_jobs = 5, 
-#           silent = True, random_state=5)
-# LGB_C = lgb.fit(X_train, y_train)
-# y_pred_lgb = LGB_C.predict(X_test)
-# print(classification_report(y_test,y_pred_lgb,target_names=['benign', 'defacement','phishing','malware']))
-
-# feat_importances = pd.Series(rf.feature_importances_, index=X_train.columns)
-# feat_importances.sort_values().plot(kind="barh",figsize=(10, 6))
-
-def main(url):
     status = []
 
     status.append(having_ip_address(url))
@@ -229,43 +166,34 @@ def main(url):
     status.append(url_length(url))
     status.append(hostname_length(url))
     status.append(suspicious_words(url))
-    status.append(digit_count(url))
-    status.append(letter_count(url))
     status.append(fd_length(url))
     tld = get_tld(url,fail_silently=True)
 
     status.append(tld_length(tld))
+    status.append(digit_count(url))
+    status.append(letter_count(url))
 
     return status
 
-rf_loaded_model = pickle.load(open('random_forest_model.sav', 'rb'))
-
-columns = ['use_of_ip','abnormal_url', 'count.', 'count-www', 'count@',
-       'count_dir', 'count_embed_domian', 'short_url', 'count-https',
-       'count-http', 'count%', 'count?', 'count-', 'count=', 'url_length',
-       'hostname_length', 'sus_url', 'fd_length', 'tld_length', 'count-digits',
-       'count-letters']
-
-# predict function 
 def get_prediction_from_url(test_url):
-    features_test = main(test_url)
+    features_test = url_parse(test_url)
     # Due to updates to scikit-learn, we now need a 2D array as a parameter to the predict function.
     features_test = np.array(features_test).reshape((1, -1))
 
     features_df = pd.DataFrame(features_test, columns=columns)
 
     # Load the saved model
-
+    # ['benign', 'malware', 'defacement', 'phishing']
     pred = rf_loaded_model.predict(features_df)
     if int(pred[0]) == 0:
-        res="SAFE"
+        res="BENIGN"
         return res
     elif int(pred[0]) == 1.0:
-        res="DEFACEMENT"
+        res="MALWARE"
         return res
     elif int(pred[0]) == 2.0:
-        res="PHISHING"
+        res="DEFACEMENT"
         return res
     elif int(pred[0]) == 3.0:
-        res="MALWARE"
+        res="PHISHING"
         return res
